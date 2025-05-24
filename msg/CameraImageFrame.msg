@@ -1,0 +1,2 @@
+sensor_msgs/Image frame
+uint32 frame_number

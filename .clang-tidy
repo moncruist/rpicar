@@ -1,0 +1,29 @@
+---
+Checks: '
+cppcoreguideline-*,
+bugprone-*,
+concurrency-*,
+hicpp-*,
+misc-*,
+modernize-*,
+performance-*,
+portability-*,
+readability-*,
+-cppcoreguidelines-pro-type-vararg,
+-cppcoreguidelines-pro-type-union-access,
+-cppcoreguidelines-avoid-magic-numbers,
+-cppcoreguidelines-pro-bounds-constant-array-index,
+-cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+-cppcoreguidelines-pro-bounds-pointer-arithmetic,
+-modernize-use-trailing-return-type,
+-readability-function-cognitive-complexity,
+-readability-identifier-length,
+-readability-avoid-const-params-in-decls,
+-misc-include-cleaner,
+'
+WarningsAsErrors: 'true'
+HeaderFilterRegex: ''
+ExcludeHeaderFilterRegex: 'rpicar/msg/.*$'
+FormatStyle:     none
+...
+
