@@ -7,6 +7,7 @@ target_link_libraries(camera_node PUBLIC
     camera
     utils
     rclcpp::rclcpp
+    image_transport::image_transport
     ${std_msgs_TARGETS}
     ${cpp_typesupport_target}
     yuv::yuv)

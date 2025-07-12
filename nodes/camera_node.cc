@@ -61,6 +61,7 @@ CameraNode::CameraNode(const rclcpp::NodeOptions& options) : rclcpp::Node("camer
     }
 
     publisher_ = create_publisher<msg::CameraImageFrame>("/camera_image", 10);
+    raw_image_publisher_ = create_publisher<sensor_msgs::msg::Image>("/image", 10);
 
     camera_->set_frame_handler([&](const camera::CameraFrame& frame) {
         frame_count_++;
@@ -74,6 +75,8 @@ CameraNode::CameraNode(const rclcpp::NodeOptions& options) : rclcpp::Node("camer
                                      argb_buf.size() / CameraNodeConfig::CAPTURE_HEIGHT,
                                      CameraNodeConfig::CAPTURE_WIDTH,
                                      CameraNodeConfig::CAPTURE_HEIGHT);
+        LOG_DEBUG("camera_node", "YUV to ARGB convert result: {}, output buffer size: {}", ret, argb_buf.size());
+
         std::vector<uint8_t> raw_buf{};
         raw_buf.resize(3U * CameraNodeConfig::CAPTURE_WIDTH * CameraNodeConfig::CAPTURE_HEIGHT);
         ret = libyuv::ARGBToRAW(argb_buf.data(),
@@ -83,20 +86,33 @@ CameraNode::CameraNode(const rclcpp::NodeOptions& options) : rclcpp::Node("camer
                                 CameraNodeConfig::CAPTURE_WIDTH,
                                 CameraNodeConfig::CAPTURE_HEIGHT);
 
-        LOG_DEBUG("camera_node", "YUV to ARGB convert result: {}", ret);
+        LOG_DEBUG("camera_node", "ARGB to RAW convert result: {}, output buffer size: {}", ret, raw_buf.size());
 
         msg::CameraImageFrame msg{};
         msg.frame_number = frame_count_;
         msg.frame.width = CameraNodeConfig::CAPTURE_WIDTH;
         msg.frame.height = CameraNodeConfig::CAPTURE_HEIGHT;
-        msg.frame.step = frame.buffer.size() / CameraNodeConfig::CAPTURE_HEIGHT;
+        msg.frame.step = argb_buf.size() / CameraNodeConfig::CAPTURE_HEIGHT;
         msg.frame.encoding = to_ros_encoding(CameraNodeConfig::PUBLISH_ENCODING);
         msg.frame.header.stamp = this->now();
         msg.frame.is_bigendian = 0;
-        msg.frame.data = std::move(raw_buf);
+        msg.frame.data = argb_buf;
 
         publisher_->publish(msg);
         LOG_INFO("camera_node", "Publish image");
+
+        sensor_msgs::msg::Image image_msg{};
+        fill_image_msg(raw_buf, image_msg);
+        image_msg.width = CameraNodeConfig::CAPTURE_WIDTH;
+        image_msg.height = CameraNodeConfig::CAPTURE_HEIGHT;
+        image_msg.step = raw_buf.size() / CameraNodeConfig::CAPTURE_HEIGHT;
+        image_msg.encoding = to_ros_encoding(CameraNodeConfig::PUBLISH_ENCODING);
+        image_msg.header.stamp = this->now();
+        image_msg.is_bigendian = 0;
+        image_msg.data = raw_buf;
+
+        raw_image_publisher_->publish(image_msg);
+        LOG_INFO("camera_node", "Publish raw image");
     });
 
     camera_->start_capture();
@@ -110,6 +126,16 @@ CameraNode::~CameraNode() {
 
 bool CameraNode::is_initialized() const {
     return camera_.has_value();
+}
+
+void CameraNode::fill_image_msg(const std::vector<uint8_t>& frame_buf, sensor_msgs::msg::Image& img) {
+    img.width = CameraNodeConfig::CAPTURE_WIDTH;
+    img.height = CameraNodeConfig::CAPTURE_HEIGHT;
+    img.step = frame_buf.size() / CameraNodeConfig::CAPTURE_HEIGHT;
+    img.encoding = to_ros_encoding(CameraNodeConfig::PUBLISH_ENCODING);
+    img.header.stamp = this->now();
+    img.is_bigendian = 0;
+    img.data = frame_buf;
 }
 
 } // namespace rpicar::nodes

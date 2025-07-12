@@ -189,7 +189,7 @@ bool RpiCamera::configure_camera(uint16_t width, uint16_t height, ImageEncoding 
         return false;
     }
 
-    if (!make_requests()) {
+    if (!make_requests(fps)) {
         deallocate_buffers();
         camera_->release();
         allocator_.reset();
@@ -253,7 +253,7 @@ void RpiCamera::deallocate_buffers() {
     frame_buffers_.clear();
 }
 
-bool RpiCamera::make_requests(uint16_t fps) {
+bool RpiCamera::make_requests(const uint16_t fps) {
     auto free_buffers(frame_buffers_);
     while (true) {
         for (StreamConfiguration& config : *configuration_) {
@@ -269,7 +269,7 @@ bool RpiCamera::make_requests(uint16_t fps) {
                     return false;
                 }
 
-                std::int64_t value_pair[2] = {lowerMicroSeconds, higherMicroSeconds};
+                std::array<std::int64_t,2> value_pair{{1'000'000 / fps, 1'000'000 / fps}};
                 request->controls().set(libcamera::controls::FrameDurationLimits,
                                         libcamera::Span<const std::int64_t, 2>(value_pair));
 

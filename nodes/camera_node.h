@@ -23,6 +23,7 @@
 #include <optional>
 #include <rclcpp/node.hpp>
 #include <rclcpp/node_options.hpp>
+#include <image_transport/image_transport/image_transport.hpp>
 #include <sensor_msgs/msg/image.hpp>
 
 namespace rpicar::nodes {
@@ -41,8 +42,11 @@ public:
     bool is_initialized() const;
 
 private:
+    void fill_image_msg(const std::vector<uint8_t>& frame_buf, sensor_msgs::msg::Image& img);
+
     std::optional<camera::V4L2Camera> camera_{};
     rclcpp::Publisher<msg::CameraImageFrame>::SharedPtr publisher_{};
+    rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr raw_image_publisher_{};
     size_t frame_count_{0U};
 };
 

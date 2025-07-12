@@ -6,15 +6,15 @@
             "binaryDir": "${sourceDir}/build",
             "generator": "Ninja",
             "cacheVariables": {
-                "CMAKE_PREFIX_PATH": "/opt/ros/jazzy",
+                "CMAKE_PREFIX_PATH": "/opt/ros/kilted",
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "1",
                 "BUILD_TESTING": "ON",
                 "CMAKE_BUILD_TYPE": "Debug"
             },
             "environment": {
-                "AMENT_PREFIX_PATH": "/opt/ros/jazzy",
-                "PKG_CONFIG_PATH": "/opt/ros/jazzy/lib/pkgconfig",
-                "PYTHONPATH": "/opt/ros/jazzy/lib/python3.13/site-packages",
+                "AMENT_PREFIX_PATH": "/opt/ros/kilted",
+                "PKG_CONFIG_PATH": "/opt/ros/kilted/lib/pkgconfig",
+                "PYTHONPATH": "/opt/ros/kilted/lib/python3.13/site-packages",
                 "ROS_PYTHON_VERSION": "3"
             }
         },
@@ -23,15 +23,15 @@
             "binaryDir": "${sourceDir}/build_clang_tidy",
             "generator": "Ninja",
             "cacheVariables": {
-                "CMAKE_PREFIX_PATH": "/opt/ros/jazzy",
+                "CMAKE_PREFIX_PATH": "/opt/ros/kilted",
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "1",
                 "BUILD_TESTING": "ON",
                 "CLANG_TIDY_CHECK": "ON"
             },
             "environment": {
-                "AMENT_PREFIX_PATH": "/opt/ros/jazzy",
-                "PKG_CONFIG_PATH": "/opt/ros/jazzy/lib/pkgconfig",
-                "PYTHONPATH": "/opt/ros/jazzy/lib/python3.13/site-packages",
+                "AMENT_PREFIX_PATH": "/opt/ros/kilted",
+                "PKG_CONFIG_PATH": "/opt/ros/kilted/lib/pkgconfig",
+                "PYTHONPATH": "/opt/ros/kilted/lib/python3.13/site-packages",
                 "ROS_PYTHON_VERSION": "3"
             }
         }
