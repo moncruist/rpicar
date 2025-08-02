@@ -16,6 +16,7 @@
 
 #include "camera/rpi_camera.h"
 
+#include "camera/camera.h"
 #include "utils/logging.h"
 
 #include <initializer_list>
@@ -48,8 +49,11 @@ RpiCamera::RpiCamera(RpiCamera&& other) noexcept
     allocator_(std::move(other.allocator_)),
     mapped_buffers_(std::move(other.mapped_buffers_)),
     frame_buffers_(std::move(other.frame_buffers_)),
+    requests_(std::move(other.requests_)),
     camera_acquired_(std::exchange(other.camera_acquired_, false)),
-    camera_started_(std::exchange(other.camera_started_, false)) {}
+    camera_started_(std::exchange(other.camera_started_, false)),
+    frame_handler_(std::move(other.frame_handler_)),
+    current_format_(std::exchange(other.current_format_, {})) {}
 
 RpiCamera& RpiCamera::operator=(RpiCamera&& other) noexcept {
     manager_ = std::move(other.manager_);
@@ -58,8 +62,11 @@ RpiCamera& RpiCamera::operator=(RpiCamera&& other) noexcept {
     allocator_ = std::move(other.allocator_);
     mapped_buffers_ = std::move(other.mapped_buffers_);
     frame_buffers_ = std::move(other.frame_buffers_);
+    requests_ = std::move(other.requests_);
     camera_acquired_ = std::exchange(other.camera_acquired_, false);
     camera_started_ = std::exchange(other.camera_started_, false);
+    frame_handler_ = std::move(other.frame_handler_);
+    current_format_ = std::exchange(other.current_format_, {});
 
     return *this;
 }
@@ -76,18 +83,25 @@ RpiCamera::create_camera(uint16_t width, uint16_t height, ImageEncoding encoding
 }
 
 bool RpiCamera::start_capture() {
-    camera_->start();
+    const int ret{camera_->start()};
+    if (ret != 0) {
+        LOG_ERROR(CAMERA_LOGGER, "Failed to start camera: {}", ret);
+        return false;
+    }
     camera_started_ = true;
 
     camera_->requestCompleted.connect(this, &RpiCamera::requested_completed_handler);
 
+    LOG_DEBUG(CAMERA_LOGGER, "Requests available: {}", requests_.size());
     for (std::unique_ptr<Request>& request : requests_) {
+        LOG_DEBUG(CAMERA_LOGGER, "Queueing request with sequence: {}", request->sequence());
         if (camera_->queueRequest(request.get()) < 0) {
             stop_capture();
             return false;
         }
     }
 
+    LOG_INFO(CAMERA_LOGGER, "Camera started successfully");
     return true;
 }
 
@@ -120,9 +134,21 @@ bool RpiCamera::stop_capture() {
     return true;
 }
 
+ImageFormat RpiCamera::current_format() const {
+    return current_format_;
+}
+
+bool RpiCamera::is_capturing() const {
+    return camera_started_;
+}
+
+void RpiCamera::set_frame_handler(std::function<void(const CameraFrame&)> handler) {
+    frame_handler_ = std::move(handler);
+}
+
 bool RpiCamera::configure_camera(uint16_t width, uint16_t height, ImageEncoding encoding, uint16_t fps) {
     int status = manager_->start();
-    if (status) {
+    if (status != 0) {
         LOG_ERROR(CAMERA_LOGGER, "Camera manager failed to start: {}", -status);
         return false;
     }
@@ -133,13 +159,24 @@ bool RpiCamera::configure_camera(uint16_t width, uint16_t height, ImageEncoding 
         return false;
     }
 
-    const auto rpi_camera_pos = std::ranges::find_if(cameras, [](std::shared_ptr<libcamera::Camera> camera) {
+    LOG_INFO(CAMERA_LOGGER, "Found {} cameras", cameras.size());
+    for (const auto& camera : cameras) {
+        LOG_INFO(CAMERA_LOGGER, "Camera ID: {}", camera->id());
+    }
+
+    auto rpi_camera_pos = std::ranges::find_if(cameras, [](std::shared_ptr<libcamera::Camera> camera) {
         return camera->id().find(RPI_CAMERA_ID) != std::string::npos;
     });
 
     if (rpi_camera_pos == cameras.end()) {
-        LOG_ERROR(CAMERA_LOGGER, "Could not find RPi camera_");
-        return false;
+        LOG_ERROR(CAMERA_LOGGER, "Could not find RPi camera");
+        // return false;
+        if (!cameras.empty()) {
+            rpi_camera_pos = cameras.begin();
+            LOG_WARN(CAMERA_LOGGER, "Using the first camera found: {}", (*rpi_camera_pos)->id());
+        } else {
+            return false;
+        }
     }
 
     camera_ = *rpi_camera_pos;
@@ -174,10 +211,13 @@ bool RpiCamera::configure_camera(uint16_t width, uint16_t height, ImageEncoding 
         return false;
     }
 
-    camera_->configure(configuration_.get());
-
-    auto fd_ctrl{camera_->controls().find(&FrameDurationLimits)};
-
+    if (camera_->configure(configuration_.get()) != 0) {
+        LOG_ERROR(CAMERA_LOGGER, "Failed to configure camera");
+        camera_->release();
+        camera_.reset();
+        configuration_.reset();
+        return false;
+    }
 
     allocator_ = std::make_unique<FrameBufferAllocator>(camera_);
 
@@ -197,6 +237,12 @@ bool RpiCamera::configure_camera(uint16_t width, uint16_t height, ImageEncoding 
         configuration_.reset();
         return false;
     }
+
+    current_format_.width = width;
+    current_format_.height = height;
+    current_format_.encoding = encoding;
+
+    return true;
 }
 
 bool RpiCamera::allocate_buffers() {
@@ -254,13 +300,21 @@ void RpiCamera::deallocate_buffers() {
 }
 
 bool RpiCamera::make_requests(const uint16_t fps) {
+    bool fps_adjust_supported{true};
+
+    const auto fd_ctrl{camera_->controls().find(&FrameDurationLimits)};
+    if (fd_ctrl == camera_->controls().end()) {
+        LOG_WARN(CAMERA_LOGGER, "Camera does not support FrameDurationLimits control");
+        fps_adjust_supported = false;
+    }
+
     auto free_buffers(frame_buffers_);
     while (true) {
         for (StreamConfiguration& config : *configuration_) {
             Stream* stream = config.stream();
             if (stream == configuration_->at(0).stream()) {
                 if (free_buffers[stream].empty()) {
-                    LOG_DEBUG(CAMERA_LOGGER, "Requests created");
+                    LOG_DEBUG(CAMERA_LOGGER, "Requests created: {}", requests_.size());
                     return true;
                 }
                 std::unique_ptr<Request> request = camera_->createRequest();
@@ -269,9 +323,11 @@ bool RpiCamera::make_requests(const uint16_t fps) {
                     return false;
                 }
 
-                std::array<std::int64_t,2> value_pair{{1'000'000 / fps, 1'000'000 / fps}};
-                request->controls().set(libcamera::controls::FrameDurationLimits,
-                                        libcamera::Span<const std::int64_t, 2>(value_pair));
+                if (fps_adjust_supported) {
+                    std::array<std::int64_t, 2> value_pair{{1'000'000 / fps, 1'000'000 / fps}};
+                    request->controls().set(libcamera::controls::FrameDurationLimits,
+                                            libcamera::Span<const std::int64_t, 2>(value_pair));
+                }
 
                 requests_.push_back(std::move(request));
             } else if (free_buffers[stream].empty()) {
@@ -281,6 +337,7 @@ bool RpiCamera::make_requests(const uint16_t fps) {
 
             FrameBuffer* buffer = free_buffers[stream].front();
             free_buffers[stream].pop();
+            LOG_DEBUG(CAMERA_LOGGER, "Adding buffer to request");
             if (requests_.back()->addBuffer(stream, buffer) < 0) {
                 LOG_ERROR(CAMERA_LOGGER, "failed to add buffer to request");
                 return false;
@@ -290,6 +347,7 @@ bool RpiCamera::make_requests(const uint16_t fps) {
 }
 
 void RpiCamera::requested_completed_handler(libcamera::Request* request) {
+    LOG_INFO(CAMERA_LOGGER, "Request received");
     if (request->status() == Request::RequestCancelled) {
         LOG_INFO(CAMERA_LOGGER, "Request cancelled");
         return;
@@ -302,12 +360,19 @@ void RpiCamera::requested_completed_handler(libcamera::Request* request) {
         timestamp = request->buffers().begin()->second->metadata().timestamp;
     }
 
+    const std::size_t buffer_size{request->buffers().begin()->second->planes().begin()->length};
 
     LOG_INFO(CAMERA_LOGGER,
              "Status: {}\tBuf size: {}\tTimestamp: {}",
              static_cast<int>(request->status()),
-             request->buffers().begin()->second->planes().begin()->length,
+             buffer_size,
              timestamp);
+
+    if (frame_handler_) {
+        const auto& buffers{mapped_buffers_.at(request->buffers().begin()->second)};
+        const CameraFrame frame{.format = current_format(), .buffer = {buffers.at(0).data(), buffer_size}};
+        frame_handler_(frame);
+    }
 
     request->reuse(Request::ReuseBuffers);
     camera_->queueRequest(request);

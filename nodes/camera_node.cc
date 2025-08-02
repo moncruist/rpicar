@@ -60,8 +60,8 @@ CameraNode::CameraNode(const rclcpp::NodeOptions& options) : rclcpp::Node("camer
         return;
     }
 
-    publisher_ = create_publisher<msg::CameraImageFrame>("/camera_image", 10);
-    raw_image_publisher_ = create_publisher<sensor_msgs::msg::Image>("/image", 10);
+    publisher_ = create_publisher<msg::CameraImageFrame>("/camera_image", rclcpp::QoS{10}.best_effort());
+    raw_image_publisher_ = create_publisher<sensor_msgs::msg::Image>("/image", rclcpp::QoS{10}.best_effort());
 
     camera_->set_frame_handler([&](const camera::CameraFrame& frame) {
         frame_count_++;

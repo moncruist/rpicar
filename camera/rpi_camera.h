@@ -19,7 +19,6 @@
 #include "camera/camera.h"
 
 #include <libcamera/libcamera.h>
-#include <list>
 #include <map>
 #include <queue>
 #include <span>
@@ -76,6 +75,7 @@ private:
     bool camera_acquired_{false};
     bool camera_started_{false};
     std::function<void(const CameraFrame&)> frame_handler_;
+    ImageFormat current_format_{};
 };
 
 } // namespace rpicar::camera

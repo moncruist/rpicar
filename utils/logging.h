@@ -16,13 +16,14 @@
 
 #pragma once
 
-#include <format>
 #include <rclcpp/rclcpp.hpp>
 #include <string>
 
+#include "compat.h"
+
 #define LOG_DEBUG(logger, msg_fmt, ...)                                                   \
     do {                                                                                  \
-        const std::string formatted_msg{std::format(msg_fmt __VA_OPT__(, ) __VA_ARGS__)}; \
+        const std::string formatted_msg{cmp::format(msg_fmt __VA_OPT__(, ) __VA_ARGS__)}; \
         _Pragma("GCC diagnostic push");                                                   \
         _Pragma("GCC diagnostic ignored \"-Wformat-security\"");                          \
         RCLCPP_DEBUG(rclcpp::get_logger(logger), formatted_msg.c_str());                  \
@@ -31,7 +32,7 @@
 
 #define LOG_INFO(logger, msg_fmt, ...)                                                    \
     do {                                                                                  \
-        const std::string formatted_msg{std::format(msg_fmt __VA_OPT__(, ) __VA_ARGS__)}; \
+        const std::string formatted_msg{cmp::format(msg_fmt __VA_OPT__(, ) __VA_ARGS__)}; \
         _Pragma("GCC diagnostic push");                                                   \
         _Pragma("GCC diagnostic ignored \"-Wformat-security\"");                          \
         RCLCPP_INFO(rclcpp::get_logger(logger), formatted_msg.c_str());                   \
@@ -40,7 +41,7 @@
 
 #define LOG_WARN(logger, msg_fmt, ...)                                                    \
     do {                                                                                  \
-        const std::string formatted_msg{std::format(msg_fmt __VA_OPT__(, ) __VA_ARGS__)}; \
+        const std::string formatted_msg{cmp::format(msg_fmt __VA_OPT__(, ) __VA_ARGS__)}; \
         _Pragma("GCC diagnostic push");                                                   \
         _Pragma("GCC diagnostic ignored \"-Wformat-security\"");                          \
         RCLCPP_WARN(rclcpp::get_logger(logger), formatted_msg.c_str());                   \
@@ -49,7 +50,7 @@
 
 #define LOG_ERROR(logger, msg_fmt, ...)                                                   \
     do {                                                                                  \
-        const std::string formatted_msg{std::format(msg_fmt __VA_OPT__(, ) __VA_ARGS__)}; \
+        const std::string formatted_msg{cmp::format(msg_fmt __VA_OPT__(, ) __VA_ARGS__)}; \
         _Pragma("GCC diagnostic push");                                                   \
         _Pragma("GCC diagnostic ignored \"-Wformat-security\"");                          \
         RCLCPP_ERROR(rclcpp::get_logger(logger), formatted_msg.c_str());                  \
@@ -58,7 +59,7 @@
 
 #define LOG_FATAL(logger, msg_fmt, ...)                                                   \
     do {                                                                                  \
-        const std::string formatted_msg{std::format(msg_fmt __VA_OPT__(, ) __VA_ARGS__)}; \
+        const std::string formatted_msg{cmp::format(msg_fmt __VA_OPT__(, ) __VA_ARGS__)}; \
         _Pragma("GCC diagnostic push");                                                   \
         _Pragma("GCC diagnostic ignored \"-Wformat-security\"");                          \
         RCLCPP_FATAL(rclcpp::get_logger(logger), formatted_msg.c_str());                  \

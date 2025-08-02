@@ -29,6 +29,15 @@ find_package(YUV REQUIRED)
 find_package(Camera REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(image_transport REQUIRED)
+
+set(COMPAT_FMT "")
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 13)
+    find_package(fmt REQUIRED)
+    set(COMPAT_FMT fmt::fmt)
+  endif()
+endif()
+
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)

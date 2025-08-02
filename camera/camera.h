@@ -16,10 +16,11 @@
 #pragma once
 
 #include <cstdint>
-#include <format>
 #include <functional>
 #include <span>
 #include <string>
+
+#include "utils/compat.h"
 
 namespace rpicar::camera {
 

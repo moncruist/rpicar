@@ -1,7 +1,9 @@
 add_library(camera_node STATIC
     camera_node_config.h
     camera_node.cc
-    camera_node.h)
+    camera_node.h
+    rpi_camera_node.cc
+    rpi_camera_node.h)
 
 target_link_libraries(camera_node PUBLIC
     camera
@@ -9,6 +11,7 @@ target_link_libraries(camera_node PUBLIC
     rclcpp::rclcpp
     image_transport::image_transport
     ${std_msgs_TARGETS}
+    ${sensor_msgs_TARGETS}
     ${cpp_typesupport_target}
     yuv::yuv)
 

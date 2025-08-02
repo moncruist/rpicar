@@ -13,15 +13,19 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-#include "nodes/rpi_camera_node.h"
+#pragma once
 
-#include <memory>
-#include <rclcpp/rclcpp.hpp>
+#if __has_include(<format>)
+#include <format>
+#else
+#include <fmt/format.h>
+#endif
 
 
-int main(int argc, char* argv[]) {
-    rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<rpicar::nodes::RpiCameraNode>(rclcpp::NodeOptions{}));
-    rclcpp::shutdown();
-    return 0;
-}
+namespace cmp {
+#if __has_include(<format>)
+using std::format;
+#else
+using fmt::format;
+#endif
+} // namespace cmp
