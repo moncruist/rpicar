@@ -53,7 +53,7 @@ constexpr std::string to_ros_encoding(camera::ImageEncoding encoding) {
 RpiCameraNode::RpiCameraNode(const rclcpp::NodeOptions& options) : rclcpp::Node("camera", options) {
     camera_ = camera::RpiCamera::create_camera(CameraNodeConfig::CAPTURE_WIDTH,
                                                CameraNodeConfig::CAPTURE_HEIGHT,
-                                               CameraNodeConfig::CAPTURE_ENCODING,
+                                               CameraNodeConfig::PUBLISH_ENCODING,
                                                CameraNodeConfig::FPS);
 
     if (!camera_.has_value()) {
@@ -61,8 +61,8 @@ RpiCameraNode::RpiCameraNode(const rclcpp::NodeOptions& options) : rclcpp::Node(
         throw std::runtime_error{"Failed to initialize camera"};
     }
 
-    publisher_ = create_publisher<msg::CameraImageFrame>("/camera_image", rclcpp::QoS{10}.best_effort());
-    raw_image_publisher_ = create_publisher<sensor_msgs::msg::Image>("/image", rclcpp::QoS{10}.best_effort());
+    publisher_ = create_publisher<msg::CameraImageFrame>("/camera_image", rclcpp::QoS{10});
+    raw_image_publisher_ = create_publisher<sensor_msgs::msg::Image>("/image", rclcpp::QoS{10});
 
     camera_->set_frame_handler([&](const camera::CameraFrame& frame) {
         frame_count_++;
@@ -106,7 +106,7 @@ void RpiCameraNode::fill_image_msg(const std::span<uint8_t> frame_buf, sensor_ms
     img.encoding = to_ros_encoding(CameraNodeConfig::PUBLISH_ENCODING);
     img.header.stamp = this->now();
     img.is_bigendian = 0;
-    img.data.assign_range(frame_buf);
+    img.data.assign(frame_buf.begin(), frame_buf.end());
 }
 
 } // namespace rpicar::nodes

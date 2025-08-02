@@ -21,7 +21,7 @@
 
 #include <initializer_list>
 #include <libcamera/control_ids.h>
-#include <ranges>
+#include <libcamera/formats.h>
 #include <sys/mman.h>
 #include <utility>
 
@@ -35,6 +35,24 @@ using libcamera::StreamRole;
 using libcamera::controls::FrameDurationLimits;
 
 namespace rpicar::camera {
+
+namespace {
+constexpr libcamera::PixelFormat to_pixel_format(ImageEncoding encoding) {
+    switch (encoding) {
+        case ImageEncoding::RGB24:
+            return libcamera::formats::RGB888;
+        case ImageEncoding::BGR24:
+            return libcamera::formats::BGR888;
+        case ImageEncoding::YUV420:
+            return libcamera::formats::YUV420;
+        case ImageEncoding::YUV422:
+            return libcamera::formats::YUV422;
+        case ImageEncoding::MJPEG:
+            return libcamera::formats::MJPEG;
+    }
+    std::unreachable();
+}
+} // namespace
 
 RpiCamera::RpiCamera() noexcept : manager_(std::make_unique<libcamera::CameraManager>()) {}
 
@@ -199,8 +217,8 @@ bool RpiCamera::configure_camera(uint16_t width, uint16_t height, ImageEncoding 
         return false;
     }
 
-    configuration_->at(0).size.width = width;
-    configuration_->at(0).size.height = height;
+    configuration_->at(0).size = libcamera::Size{width, height};
+    configuration_->at(0).pixelFormat = to_pixel_format(encoding);
 
     const auto conf_status = configuration_->validate();
     if (conf_status == CameraConfiguration::Invalid) {
