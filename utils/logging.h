@@ -16,10 +16,10 @@
 
 #pragma once
 
-#include <rclcpp/rclcpp.hpp>
-#include <string>
+#include "utils/compat.h" // NOLINT(unused-includes)
 
-#include "compat.h"
+#include <rclcpp/rclcpp.hpp>
+#include <string> // NOLINT(unused-includes)
 
 #define LOG_DEBUG(logger, msg_fmt, ...)                                                   \
     do {                                                                                  \
@@ -65,4 +65,3 @@
         RCLCPP_FATAL(rclcpp::get_logger(logger), formatted_msg.c_str());                  \
         _Pragma("GCC diagnostic pop");                                                    \
     } while (0)
-

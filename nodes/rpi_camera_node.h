@@ -16,7 +16,6 @@
 #pragma once
 
 #include "camera/rpi_camera.h"
-#include "camera/transcoder.h"
 #include "rpicar/msg/camera_image_frame.hpp"
 
 #include <cstddef>
@@ -38,15 +37,12 @@ public:
     RpiCameraNode& operator=(const RpiCameraNode&) = delete;
     RpiCameraNode& operator=(RpiCameraNode&&) = delete;
 
-    [[nodiscard]]
-    bool is_initialized() const;
-
 private:
     static constexpr std::string LOGGER_NAME{"rpi_camera_node"};
 
-    void fill_image_msg(const std::span<uint8_t> frame_buf, sensor_msgs::msg::Image& img);
+    void fill_image_msg(const std::span<uint8_t> frame_buf, sensor_msgs::msg::Image& img) const;
 
-    std::optional<camera::RpiCamera> camera_{};
+    camera::RpiCamera camera_;
     rclcpp::Publisher<msg::CameraImageFrame>::SharedPtr publisher_{};
     rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr raw_image_publisher_{};
     size_t frame_count_{0U};

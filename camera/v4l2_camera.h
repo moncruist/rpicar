@@ -70,8 +70,8 @@ private:
 
     explicit V4L2Camera(std::string device_path) noexcept;
 
-    void destroy();
-    bool v4l2_stop_capture();
+    void destroy() noexcept;
+    bool v4l2_stop_capture() noexcept;
 
     [[nodiscard]]
     std::optional<v4l2_format> v4l2_get_video_format() const;

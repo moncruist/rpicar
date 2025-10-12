@@ -378,20 +378,23 @@ std::optional<DecodedFrame> Transcoder::change_pixel_format(const CameraFrame& f
 
 
     const int alloc_ret = av_image_alloc(
-            enc_frame->data, enc_frame->linesize, frame.format.width, frame.format.height, to_pix_fmt_, 1);
+            &enc_frame->data[0], &enc_frame->linesize[0], frame.format.width, frame.format.height, to_pix_fmt_, 1);
     if (alloc_ret < 0) {
         LOG_ERROR(CAMERA_LOGGER, "CameraFrame av_image_alloc failed: {}", AVUNERROR(alloc_ret));
         av_frame_free(&enc_frame);
         return std::nullopt;
     }
 
-    // NOLINTBEGIN(hicpp-no-array-decay)
-    const int ret = sws_scale(
-            sws_context_, planes.data(), line_sizes.data(), 0, from_.height, enc_frame->data, enc_frame->linesize);
-    // NOLINTEND(hicpp-no-array-decay)
+    const int ret = sws_scale(sws_context_,
+                              planes.data(),
+                              line_sizes.data(),
+                              0,
+                              from_.height,
+                              &enc_frame->data[0],
+                              &enc_frame->linesize[0]);
     if (ret < 0) {
         LOG_ERROR(CAMERA_LOGGER, "CameraFrame sws_scale failed: {}", AVUNERROR(ret));
-        av_freep(enc_frame->data);
+        av_freep(reinterpret_cast<void*>(enc_frame->data));
         av_frame_free(&enc_frame);
         return std::nullopt;
     }
@@ -399,7 +402,7 @@ std::optional<DecodedFrame> Transcoder::change_pixel_format(const CameraFrame& f
     DecodedFrame decoded{.width = frame.format.width,
                          .height = frame.format.height,
                          .data = std::vector<uint8_t>(enc_frame->data[0], enc_frame->data[0] + enc_frame->linesize[0])};
-    av_freep(enc_frame->data);
+    av_freep(reinterpret_cast<void*>(enc_frame->data));
     av_frame_free(&enc_frame);
 
     return decoded;

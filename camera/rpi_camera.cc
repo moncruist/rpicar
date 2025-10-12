@@ -1,5 +1,5 @@
 // rpivision
-// Copyright (C) 2021 Konstantin Zhukov
+// Copyright (C) 2021-2025 Konstantin Zhukov
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
 #include "camera/rpi_camera.h"
 
 #include "camera/camera.h"
+#include "utils/assert.h"
 #include "utils/logging.h"
 
 #include <initializer_list>
@@ -52,12 +53,27 @@ constexpr libcamera::PixelFormat to_pixel_format(ImageEncoding encoding) {
     }
     std::unreachable();
 }
+
+constexpr std::int64_t calculate_frame_duration(std::uint16_t fps) {
+    constexpr std::int64_t MICROSECONDS_IN_SECOND{1'000'000};
+    return static_cast<std::int64_t>(MICROSECONDS_IN_SECOND / fps);
+}
+
 } // namespace
 
-RpiCamera::RpiCamera() noexcept : manager_(std::make_unique<libcamera::CameraManager>()) {}
+// NOLINTNEXTLINE(bugprone-exception-escape): Should not throw
+RpiCamera::RpiCamera(const std::uint16_t width,
+                     const std::uint16_t height,
+                     const ImageEncoding encoding,
+                     const std::uint16_t fps) noexcept
+  : manager_(std::make_unique<libcamera::CameraManager>()) {
+    const bool configured{configure_camera(width, height, encoding, fps)};
+
+    ASSERT_PRD_MSG(configured, "Failed to configure RPi camera");
+}
 
 RpiCamera::~RpiCamera() {
-    stop_capture();
+    RpiCamera::stop_capture();
 }
 
 RpiCamera::RpiCamera(RpiCamera&& other) noexcept
@@ -87,17 +103,6 @@ RpiCamera& RpiCamera::operator=(RpiCamera&& other) noexcept {
     current_format_ = std::exchange(other.current_format_, {});
 
     return *this;
-}
-
-std::optional<RpiCamera>
-RpiCamera::create_camera(uint16_t width, uint16_t height, ImageEncoding encoding, uint16_t fps) {
-    RpiCamera camera{};
-
-    if (camera.configure_camera(width, height, encoding, fps)) {
-        return camera;
-    }
-
-    return std::nullopt;
 }
 
 bool RpiCamera::start_capture() {
@@ -164,7 +169,10 @@ void RpiCamera::set_frame_handler(std::function<void(const CameraFrame&)> handle
     frame_handler_ = std::move(handler);
 }
 
-bool RpiCamera::configure_camera(uint16_t width, uint16_t height, ImageEncoding encoding, uint16_t fps) {
+bool RpiCamera::configure_camera(const std::uint16_t width,
+                                 const std::uint16_t height,
+                                 const ImageEncoding encoding,
+                                 const std::uint16_t fps) {
     int status = manager_->start();
     if (status != 0) {
         LOG_ERROR(CAMERA_LOGGER, "Camera manager failed to start: {}", -status);
@@ -182,7 +190,7 @@ bool RpiCamera::configure_camera(uint16_t width, uint16_t height, ImageEncoding 
         LOG_INFO(CAMERA_LOGGER, "Camera ID: {}", camera->id());
     }
 
-    auto rpi_camera_pos = std::ranges::find_if(cameras, [](std::shared_ptr<libcamera::Camera> camera) {
+    auto rpi_camera_pos = std::ranges::find_if(cameras, [](const std::shared_ptr<libcamera::Camera>& camera) -> bool {
         return camera->id().find(RPI_CAMERA_ID) != std::string::npos;
     });
 
@@ -265,7 +273,7 @@ bool RpiCamera::configure_camera(uint16_t width, uint16_t height, ImageEncoding 
 
 bool RpiCamera::allocate_buffers() {
     bool success{true};
-    for (StreamConfiguration& config : *configuration_) {
+    for (const StreamConfiguration& config : *configuration_) {
         Stream* stream = config.stream();
 
         if (allocator_->allocate(stream) < 0) {
@@ -283,7 +291,7 @@ bool RpiCamera::allocate_buffers() {
                 const FrameBuffer::Plane& plane = buffer->planes()[i];
                 buffer_size += plane.length;
                 if ((i == buffer->planes().size() - 1) || (plane.fd.get() != buffer->planes()[i + 1].fd.get())) {
-                    void* memory = mmap(NULL, buffer_size, PROT_READ | PROT_WRITE, MAP_SHARED, plane.fd.get(), 0);
+                    void* memory = mmap(nullptr, buffer_size, PROT_READ | PROT_WRITE, MAP_SHARED, plane.fd.get(), 0);
                     mapped_buffers_[buffer.get()].emplace_back(static_cast<uint8_t*>(memory), buffer_size);
                     buffer_size = 0;
                 }
@@ -317,7 +325,7 @@ void RpiCamera::deallocate_buffers() {
     frame_buffers_.clear();
 }
 
-bool RpiCamera::make_requests(const uint16_t fps) {
+bool RpiCamera::make_requests(const std::uint16_t fps) {
     bool fps_adjust_supported{true};
 
     const auto fd_ctrl{camera_->controls().find(&FrameDurationLimits)};
@@ -328,7 +336,7 @@ bool RpiCamera::make_requests(const uint16_t fps) {
 
     auto free_buffers(frame_buffers_);
     while (true) {
-        for (StreamConfiguration& config : *configuration_) {
+        for (const StreamConfiguration& config : *configuration_) {
             Stream* stream = config.stream();
             if (stream == configuration_->at(0).stream()) {
                 if (free_buffers[stream].empty()) {
@@ -342,7 +350,8 @@ bool RpiCamera::make_requests(const uint16_t fps) {
                 }
 
                 if (fps_adjust_supported) {
-                    std::array<std::int64_t, 2> value_pair{{1'000'000 / fps, 1'000'000 / fps}};
+                    const std::int64_t frame_duration{calculate_frame_duration(fps)};
+                    std::array<std::int64_t, 2> value_pair{{frame_duration, frame_duration}};
                     request->controls().set(libcamera::controls::FrameDurationLimits,
                                             libcamera::Span<const std::int64_t, 2>(value_pair));
                 }

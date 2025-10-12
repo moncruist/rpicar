@@ -123,13 +123,15 @@ V4L2Camera::~V4L2Camera() {
     destroy();
 }
 
-void V4L2Camera::destroy() {
+// NOLINTNEXTLINE(bugprone-exception-escape)
+void V4L2Camera::destroy() noexcept {
     v4l2_stop_capture();
     close();
     cleanup_buffers();
 }
 
-bool V4L2Camera::v4l2_stop_capture() {
+// NOLINTNEXTLINE(bugprone-exception-escape)
+bool V4L2Camera::v4l2_stop_capture() noexcept {
     if (!running_) {
         return false;
     }

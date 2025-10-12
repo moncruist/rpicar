@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "error_utils.h"
+#include "utils/error_utils.h"
 
 #include <array>
 #include <cstddef>

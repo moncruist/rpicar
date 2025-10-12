@@ -26,8 +26,12 @@
 
 namespace rpicar::camera {
 
-class RpiCamera : public ICamera {
+class RpiCamera final : public ICamera {
 public:
+    RpiCamera(const std::uint16_t width,
+              const std::uint16_t height,
+              const ImageEncoding encoding,
+              const std::uint16_t fps) noexcept;
     ~RpiCamera() override;
 
     RpiCamera(const RpiCamera&) = delete;
@@ -35,10 +39,6 @@ public:
 
     RpiCamera& operator=(const RpiCamera&) = delete;
     RpiCamera& operator=(RpiCamera&& other) noexcept;
-
-    [[nodiscard]]
-    static std::optional<RpiCamera>
-    create_camera(uint16_t width, uint16_t height, ImageEncoding encoding, uint16_t fps);
 
     bool start_capture() override;
     bool stop_capture() override;
@@ -54,14 +54,15 @@ public:
 private:
     static constexpr auto RPI_CAMERA_ID{"imx708"};
 
-    RpiCamera() noexcept;
-
-    bool configure_camera(uint16_t width, uint16_t height, ImageEncoding encoding, uint16_t fps);
+    bool configure_camera(const std::uint16_t width,
+                          const std::uint16_t height,
+                          const ImageEncoding encoding,
+                          const std::uint16_t fps);
 
     bool allocate_buffers();
     void deallocate_buffers();
 
-    bool make_requests(uint16_t fps);
+    bool make_requests(std::uint16_t fps);
 
     void requested_completed_handler(libcamera::Request* request);
 

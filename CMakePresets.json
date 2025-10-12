@@ -39,11 +39,13 @@
     "buildPresets": [
         {
             "name": "local_build",
-            "configurePreset": "local_build"
+            "configurePreset": "local_build",
+            "inheritConfigureEnvironment": true
         },
         {
             "name": "local_clang_tidy",
-            "configurePreset": "local_clang_tidy"
+            "configurePreset": "local_clang_tidy",
+            "inheritConfigureEnvironment": true
         }
     ]
 }

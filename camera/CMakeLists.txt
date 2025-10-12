@@ -7,7 +7,7 @@ add_library(camera STATIC
     v4l2_camera.h
     v4l2_camera.cc)
 
-target_link_libraries(camera PUBLIC utils ffmpeg::ffmpeg rclcpp::rclcpp Camera::Camera)
+target_link_libraries(camera PUBLIC utils ffmpeg::ffmpeg rclcpp::rclcpp camera::camera)
 target_include_directories(camera
     PUBLIC
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>

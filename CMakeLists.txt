@@ -2,11 +2,17 @@ cmake_minimum_required(VERSION 3.25)
 project(rpicar)
 
 option(CLANG_TIDY_CHECK "Run clang-tidy checks" OFF)
+option(DEBUG_ASSERTIONS "Enable debug assertions" OFF)
 message(STATUS "Clang-tidy checks enabled: ${CLANG_TIDY_CHECK}")
 
 set(CMAKE_CXX_STANDARD 23)
+
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra)
+endif()
+
+if(DEBUG_ASSERTIONS OR CMAKE_BUILD_TYPE STREQUAL "Debug")
+  add_compile_definitions(DEBUG_ASSERTIONS)
 endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -26,9 +32,10 @@ find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(ffmpeg REQUIRED)
 find_package(YUV REQUIRED)
-find_package(Camera REQUIRED)
+find_package(camera REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(image_transport REQUIRED)
+find_package(Boost CONFIG REQUIRED COMPONENTS headers)
 
 set(COMPAT_FMT "")
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -49,7 +56,22 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   DEPENDENCIES builtin_interfaces std_msgs sensor_msgs
 )
 
-rosidl_get_typesupport_target(cpp_typesupport_target "${PROJECT_NAME}" "rosidl_typesupport_cpp")
+rosidl_get_typesupport_target(rpicar_cpp_typesupport_target "${PROJECT_NAME}" "rosidl_typesupport_cpp")
+
+# suppress clang-tidy checks for generated files
+foreach(typesupport
+    "rosidl_typesupport_cpp"
+    "rosidl_typesupport_c"
+    "rosidl_typesupport_fastrtps_cpp"
+    "rosidl_typesupport_fastrtps_c"
+    "rosidl_typesupport_introspection_cpp"
+    "rosidl_generator_cpp"
+)
+  rosidl_get_typesupport_target(target "${PROJECT_NAME}" "${typesupport}")
+  get_target_property(sources ${target} SOURCES)
+  set_source_files_properties(${sources} PROPERTIES SKIP_LINTING ON)
+endforeach()
+
 ament_export_dependencies(rosidl_default_runtime)
 
 add_subdirectory(utils)

@@ -12,7 +12,7 @@ target_link_libraries(camera_node PUBLIC
     image_transport::image_transport
     ${std_msgs_TARGETS}
     ${sensor_msgs_TARGETS}
-    ${cpp_typesupport_target}
+    ${rpicar_cpp_typesupport_target}
     yuv::yuv)
 
 target_include_directories(camera_node

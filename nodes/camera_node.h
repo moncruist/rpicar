@@ -42,7 +42,7 @@ public:
     bool is_initialized() const;
 
 private:
-    void fill_image_msg(const std::vector<uint8_t>& frame_buf, sensor_msgs::msg::Image& img);
+    void fill_image_msg(const std::vector<uint8_t>& frame_buf, sensor_msgs::msg::Image& img) const;
 
     std::optional<camera::V4L2Camera> camera_{};
     rclcpp::Publisher<msg::CameraImageFrame>::SharedPtr publisher_{};

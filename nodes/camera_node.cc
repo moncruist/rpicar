@@ -23,6 +23,7 @@
 #include "rpicar/msg/camera_image_frame.hpp"
 #include "utils/logging.h"
 
+#include <cstddef>
 #include <libyuv/convert_argb.h>
 #include <libyuv/convert_from_argb.h>
 #include <sensor_msgs/image_encodings.hpp>
@@ -32,21 +33,33 @@
 namespace rpicar::nodes {
 
 namespace {
-constexpr std::string to_ros_encoding(camera::ImageEncoding encoding) {
+constexpr std::string_view to_ros_encoding(const camera::ImageEncoding encoding) {
+    using namespace std::string_view_literals;
+
     switch (encoding) {
-        case rpicar::camera::ImageEncoding::RGB24:
-            return std::string{sensor_msgs::image_encodings::RGB8};
-        case rpicar::camera::ImageEncoding::BGR24:
-            return std::string{sensor_msgs::image_encodings::BGR8};
-        case rpicar::camera::ImageEncoding::YUV420:
-            return std::string{sensor_msgs::image_encodings::NV21};
-        case rpicar::camera::ImageEncoding::YUV422:
-            return std::string{sensor_msgs::image_encodings::YUYV};
-        case rpicar::camera::ImageEncoding::MJPEG:
+        case camera::ImageEncoding::RGB24:
+            return std::string_view{sensor_msgs::image_encodings::RGB8}; // NOLINT(hicpp-no-array-decay)
+        case camera::ImageEncoding::BGR24:
+            return std::string_view{sensor_msgs::image_encodings::BGR8}; // NOLINT(hicpp-no-array-decay)
+        case camera::ImageEncoding::YUV420:
+            return std::string_view{sensor_msgs::image_encodings::NV21}; // NOLINT(hicpp-no-array-decay)
+        case camera::ImageEncoding::YUV422:
+            return std::string_view{sensor_msgs::image_encodings::YUYV}; // NOLINT(hicpp-no-array-decay)
+        case camera::ImageEncoding::MJPEG:
         default:
-            return std::string{"Unknown"};
+            return "Unknown"sv;
     }
 }
+
+constexpr int calculate_stride(const std::size_t buf_size, const std::size_t height) {
+    return static_cast<int>(buf_size / height);
+}
+
+constexpr std::size_t
+calculate_frame_size(const std::size_t channels, const std::size_t width, const std::size_t height) {
+    return channels * width * height;
+}
+
 } // namespace
 
 CameraNode::CameraNode(const rclcpp::NodeOptions& options) : rclcpp::Node("camera", options) {
@@ -60,29 +73,32 @@ CameraNode::CameraNode(const rclcpp::NodeOptions& options) : rclcpp::Node("camer
         return;
     }
 
-    publisher_ = create_publisher<msg::CameraImageFrame>("/camera_image", rclcpp::QoS{10}.best_effort());
-    raw_image_publisher_ = create_publisher<sensor_msgs::msg::Image>("/image", rclcpp::QoS{10}.best_effort());
+    auto& camera{camera_.value()};
 
-    camera_->set_frame_handler([&](const camera::CameraFrame& frame) {
+    publisher_ = create_publisher<msg::CameraImageFrame>(
+            "/camera_image", rclcpp::QoS{CameraNodeConfig::QOS_HISTORY_LENGHT}.best_effort());
+    raw_image_publisher_ = create_publisher<sensor_msgs::msg::Image>(
+            "/image", rclcpp::QoS{CameraNodeConfig::QOS_HISTORY_LENGHT}.best_effort());
+
+    camera.set_frame_handler([&](const camera::CameraFrame& frame) {
         frame_count_++;
 
-
         std::vector<uint8_t> argb_buf{};
-        argb_buf.resize(4U * CameraNodeConfig::CAPTURE_WIDTH * CameraNodeConfig::CAPTURE_HEIGHT);
+        argb_buf.resize(calculate_frame_size(4U, CameraNodeConfig::CAPTURE_WIDTH, CameraNodeConfig::CAPTURE_HEIGHT));
         int ret = libyuv::YUY2ToARGB(frame.buffer.data(),
-                                     frame.buffer.size() / CameraNodeConfig::CAPTURE_HEIGHT,
+                                     calculate_stride(frame.buffer.size(), CameraNodeConfig::CAPTURE_HEIGHT),
                                      argb_buf.data(),
-                                     argb_buf.size() / CameraNodeConfig::CAPTURE_HEIGHT,
+                                     calculate_stride(argb_buf.size(), CameraNodeConfig::CAPTURE_HEIGHT),
                                      CameraNodeConfig::CAPTURE_WIDTH,
                                      CameraNodeConfig::CAPTURE_HEIGHT);
         LOG_DEBUG("camera_node", "YUV to ARGB convert result: {}, output buffer size: {}", ret, argb_buf.size());
 
         std::vector<uint8_t> raw_buf{};
-        raw_buf.resize(3U * CameraNodeConfig::CAPTURE_WIDTH * CameraNodeConfig::CAPTURE_HEIGHT);
+        raw_buf.resize(calculate_frame_size(3U, CameraNodeConfig::CAPTURE_WIDTH, CameraNodeConfig::CAPTURE_HEIGHT));
         ret = libyuv::ARGBToRAW(argb_buf.data(),
-                                argb_buf.size() / CameraNodeConfig::CAPTURE_HEIGHT,
+                                calculate_stride(argb_buf.size(), CameraNodeConfig::CAPTURE_HEIGHT),
                                 raw_buf.data(),
-                                raw_buf.size() / CameraNodeConfig::CAPTURE_HEIGHT,
+                                calculate_stride(raw_buf.size(), CameraNodeConfig::CAPTURE_HEIGHT),
                                 CameraNodeConfig::CAPTURE_WIDTH,
                                 CameraNodeConfig::CAPTURE_HEIGHT);
 
@@ -115,7 +131,7 @@ CameraNode::CameraNode(const rclcpp::NodeOptions& options) : rclcpp::Node("camer
         LOG_INFO("camera_node", "Publish raw image");
     });
 
-    camera_->start_capture();
+    camera.start_capture();
 }
 
 CameraNode::~CameraNode() {
@@ -128,7 +144,7 @@ bool CameraNode::is_initialized() const {
     return camera_.has_value();
 }
 
-void CameraNode::fill_image_msg(const std::vector<uint8_t>& frame_buf, sensor_msgs::msg::Image& img) {
+void CameraNode::fill_image_msg(const std::vector<uint8_t>& frame_buf, sensor_msgs::msg::Image& img) const {
     img.width = CameraNodeConfig::CAPTURE_WIDTH;
     img.height = CameraNodeConfig::CAPTURE_HEIGHT;
     img.step = frame_buf.size() / CameraNodeConfig::CAPTURE_HEIGHT;

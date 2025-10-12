@@ -15,15 +15,21 @@ readability-*,
 -cppcoreguidelines-pro-bounds-constant-array-index,
 -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
 -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+-misc-include-cleaner,
 -modernize-use-trailing-return-type,
+-portability-template-virtual-member-function,
 -readability-function-cognitive-complexity,
 -readability-identifier-length,
 -readability-avoid-const-params-in-decls,
--misc-include-cleaner,
+-readability-redundant-member-init,
 '
 WarningsAsErrors: 'true'
 HeaderFilterRegex: ''
-ExcludeHeaderFilterRegex: 'rpicar/msg/.*$'
+ExcludeHeaderFilterRegex: '.*/rpicar/msg/.*$'
 FormatStyle:     none
+UseColor: 'true'
+CheckOptions:
+  - key: readability-function-cognitive-complexity.Threshold
+    value: '300'
 ...
 

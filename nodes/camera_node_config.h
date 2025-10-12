@@ -28,6 +28,7 @@ struct CameraNodeConfig {
     static constexpr camera::ImageEncoding CAPTURE_ENCODING{camera::ImageEncoding::YUV422};
     static constexpr camera::ImageEncoding PUBLISH_ENCODING{camera::ImageEncoding::RGB24};
     static constexpr uint16_t FPS{15U};
+    static constexpr std::size_t QOS_HISTORY_LENGHT{10U};
 };
 
 } // namespace rpicar::nodes
