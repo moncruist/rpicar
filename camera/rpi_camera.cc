@@ -54,9 +54,9 @@ constexpr libcamera::PixelFormat to_pixel_format(ImageEncoding encoding) {
     std::unreachable();
 }
 
-constexpr std::int64_t calculate_frame_duration(std::uint16_t fps) {
+constexpr std::int64_t calculate_frame_duration(const std::uint16_t fps) {
     constexpr std::int64_t MICROSECONDS_IN_SECOND{1'000'000};
-    return static_cast<std::int64_t>(MICROSECONDS_IN_SECOND / fps);
+    return MICROSECONDS_IN_SECOND / fps;
 }
 
 } // namespace
@@ -69,7 +69,8 @@ RpiCamera::RpiCamera(const std::uint16_t width,
   : manager_(std::make_unique<libcamera::CameraManager>()) {
     const bool configured{configure_camera(width, height, encoding, fps)};
 
-    ASSERT_PRD_MSG(configured, "Failed to configure RPi camera");
+    LOG_FATAL_COND(!configured, CAMERA_LOGGER, "Failed to configure RPi camera");
+    ASSERT_PRD(configured);
 }
 
 RpiCamera::~RpiCamera() {

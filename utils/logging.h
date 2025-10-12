@@ -30,6 +30,13 @@
         _Pragma("GCC diagnostic pop");                                                    \
     } while (0)
 
+#define LOG_DEBUG_COND(cond, logger, msg_fmt, ...)                 \
+    do {                                                           \
+        if (cond) {                                                \
+            LOG_DEBUG(logger, msg_fmt __VA_OPT__(, ) __VA_ARGS__); \
+        }                                                          \
+    } while (0)
+
 #define LOG_INFO(logger, msg_fmt, ...)                                                    \
     do {                                                                                  \
         const std::string formatted_msg{cmp::format(msg_fmt __VA_OPT__(, ) __VA_ARGS__)}; \
@@ -37,6 +44,13 @@
         _Pragma("GCC diagnostic ignored \"-Wformat-security\"");                          \
         RCLCPP_INFO(rclcpp::get_logger(logger), formatted_msg.c_str());                   \
         _Pragma("GCC diagnostic pop");                                                    \
+    } while (0)
+
+#define LOG_INFO_COND(cond, logger, msg_fmt, ...)                 \
+    do {                                                          \
+        if (cond) {                                               \
+            LOG_INFO(logger, msg_fmt __VA_OPT__(, ) __VA_ARGS__); \
+        }                                                         \
     } while (0)
 
 #define LOG_WARN(logger, msg_fmt, ...)                                                    \
@@ -48,6 +62,13 @@
         _Pragma("GCC diagnostic pop");                                                    \
     } while (0)
 
+#define LOG_WARN_COND(cond, logger, msg_fmt, ...)                 \
+    do {                                                          \
+        if (cond) {                                               \
+            LOG_WARN(logger, msg_fmt __VA_OPT__(, ) __VA_ARGS__); \
+        }                                                         \
+    } while (0)
+
 #define LOG_ERROR(logger, msg_fmt, ...)                                                   \
     do {                                                                                  \
         const std::string formatted_msg{cmp::format(msg_fmt __VA_OPT__(, ) __VA_ARGS__)}; \
@@ -57,6 +78,14 @@
         _Pragma("GCC diagnostic pop");                                                    \
     } while (0)
 
+#define LOG_ERROR_COND(cond, logger, msg_fmt, ...)                 \
+    do {                                                           \
+        if (cond) {                                                \
+            LOG_ERROR(logger, msg_fmt __VA_OPT__(, ) __VA_ARGS__); \
+        }                                                          \
+    } while (0)
+
+
 #define LOG_FATAL(logger, msg_fmt, ...)                                                   \
     do {                                                                                  \
         const std::string formatted_msg{cmp::format(msg_fmt __VA_OPT__(, ) __VA_ARGS__)}; \
@@ -64,4 +93,11 @@
         _Pragma("GCC diagnostic ignored \"-Wformat-security\"");                          \
         RCLCPP_FATAL(rclcpp::get_logger(logger), formatted_msg.c_str());                  \
         _Pragma("GCC diagnostic pop");                                                    \
+    } while (0)
+
+#define LOG_FATAL_COND(cond, logger, msg_fmt, ...)                 \
+    do {                                                           \
+        if (cond) {                                                \
+            LOG_FATAL(logger, msg_fmt __VA_OPT__(, ) __VA_ARGS__); \
+        }                                                          \
     } while (0)
