@@ -14,7 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#pragma once
+#ifndef NODES_CAMERA_NODE_CONFIG_H
+#define NODES_CAMERA_NODE_CONFIG_H
 
 #include "camera/camera.h"
 
@@ -32,3 +33,5 @@ struct CameraNodeConfig {
 };
 
 } // namespace rpicar::nodes
+
+#endif // NODES_CAMERA_NODE_CONFIG_H

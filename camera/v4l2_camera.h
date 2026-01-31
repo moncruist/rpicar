@@ -13,7 +13,8 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-#pragma once
+#ifndef CAMERA_V4L2_CAMERA_H
+#define CAMERA_V4L2_CAMERA_H
 
 #include "camera/camera.h"
 
@@ -126,3 +127,5 @@ private:
 };
 
 } // namespace rpicar::camera
+
+#endif // CAMERA_V4L2_CAMERA_H

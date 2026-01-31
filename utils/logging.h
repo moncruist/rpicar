@@ -14,7 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#pragma once
+#ifndef UTILS_LOGGING_H
+#define UTILS_LOGGING_H
 
 #include "utils/compat.h" // NOLINT(unused-includes)
 
@@ -101,3 +102,5 @@
             LOG_FATAL(logger, msg_fmt __VA_OPT__(, ) __VA_ARGS__); \
         }                                                          \
     } while (0)
+
+#endif // UTILS_LOGGING_H

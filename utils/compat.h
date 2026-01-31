@@ -13,7 +13,8 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-#pragma once
+#ifndef UTILS_COMPAT_H
+#define UTILS_COMPAT_H
 
 #if __has_include(<format>)
 #include <format>
@@ -29,3 +30,5 @@ using std::format;
 using fmt::format;
 #endif
 } // namespace cmp
+
+#endif // UTILS_COMPAT_H

@@ -13,7 +13,8 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-#pragma once
+#ifndef NODES_RPI_CAMERA_NODE_H
+#define NODES_RPI_CAMERA_NODE_H
 
 #include "camera/rpi_camera.h"
 #include "rpicar/msg/camera_image_frame.hpp"
@@ -48,3 +49,5 @@ private:
 
 
 } // namespace rpicar::nodes
+
+#endif // NODES_RPI_CAMERA_NODE_H

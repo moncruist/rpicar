@@ -14,7 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#pragma once
+#ifndef UTILS_ERROR_UTILS_H
+#define UTILS_ERROR_UTILS_H
 
 #include <string>
 
@@ -23,3 +24,5 @@ namespace rpicar {
 std::string errno_to_str(const int errnum) noexcept;
 
 } // namespace rpicar
+
+#endif // UTILS_ERROR_UTILS_H

@@ -13,8 +13,8 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-#pragma once
+#ifndef CAMERA_TRANSCODER_H
+#define CAMERA_TRANSCODER_H
 
 #include "camera/camera.h"
 
@@ -74,3 +74,5 @@ private:
 };
 
 } // namespace rpicar::camera
+
+#endif // CAMERA_TRANSCODER_H

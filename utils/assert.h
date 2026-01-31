@@ -13,7 +13,8 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-#pragma once
+#ifndef UTILS_ASSERT_H
+#define UTILS_ASSERT_H
 
 #include <stacktrace>
 
@@ -55,3 +56,5 @@ inline void assertion_failed(const char* expr, const char* function, const char*
 
 #define ASSERT_PRD(expr)          BOOST_ASSERT(expr)
 #define ASSERT_PRD_MSG(expr, msg) BOOST_ASSERT_MSG(expr, msg)
+
+#endif // UTILS_ASSERT_H
