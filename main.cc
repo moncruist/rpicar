@@ -13,15 +13,27 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#ifdef RPI_BUILD
 #include "nodes/rpi_camera_node.h"
+#else
+#include "nodes/camera_node.h"
+#endif
+
 
 #include <memory>
+#include <rclcpp/executors/multi_threaded_executor.hpp>
 #include <rclcpp/rclcpp.hpp>
 
 
 int main(int argc, char* argv[]) {
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<rpicar::nodes::RpiCameraNode>(rclcpp::NodeOptions{}));
+    rclcpp::executors::MultiThreadedExecutor executor;
+#ifdef RPI_BUILD
+    executor.add_node(std::make_shared<rpicar::nodes::RpiCameraNode>(rclcpp::NodeOptions{}));
+#else
+    executor.add_node(std::make_shared<rpicar::nodes::CameraNode>(rclcpp::NodeOptions{}));
+#endif
+    executor.spin();
     rclcpp::shutdown();
     return 0;
 }
