@@ -17,7 +17,6 @@
 #include "nodes/camera_node.h"
 
 #include "camera/camera.h"
-#include "camera/transcoder.h"
 #include "camera/v4l2_camera.h"
 #include "nodes/camera_node_config.h"
 #include "rpicar/msg/camera_image_frame.hpp"
@@ -28,7 +27,6 @@
 #include <libyuv/convert_from_argb.h>
 #include <sensor_msgs/image_encodings.hpp>
 #include <string>
-#include <utility>
 
 namespace rpicar::nodes {
 

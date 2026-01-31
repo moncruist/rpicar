@@ -3,6 +3,7 @@ project(rpicar)
 
 option(CLANG_TIDY_CHECK "Run clang-tidy checks" OFF)
 option(DEBUG_ASSERTIONS "Enable debug assertions" OFF)
+option(PROFILER "Enable profiler support" OFF)
 message(STATUS "Clang-tidy checks enabled: ${CLANG_TIDY_CHECK}")
 
 set(CMAKE_CXX_STANDARD 23)
@@ -13,6 +14,10 @@ endif()
 
 if(DEBUG_ASSERTIONS OR CMAKE_BUILD_TYPE STREQUAL "Debug")
   add_compile_definitions(DEBUG_ASSERTIONS)
+endif()
+
+if (PROFILER)
+  add_compile_options(-pg)
 endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -34,8 +39,8 @@ find_package(ffmpeg REQUIRED)
 find_package(YUV REQUIRED)
 find_package(camera REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
-find_package(image_transport REQUIRED)
 find_package(Boost CONFIG REQUIRED COMPONENTS headers)
+find_package(OpenCV REQUIRED COMPONENTS core imgproc)
 
 set(COMPAT_FMT "")
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")

@@ -33,7 +33,7 @@ assertion_failed_msg(const char* expr, const char* msg, const char* function, co
               file,
               line,
               (msg ? msg : "<...>"),
-              std::stacktrace());
+              std::stacktrace::current());
 
     std::abort();
 }

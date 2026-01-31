@@ -18,18 +18,15 @@
 
 #include "camera/camera.h"
 #include "camera/rpi_camera.h"
-#include "camera/transcoder.h"
 #include "nodes/camera_node_config.h"
 #include "rpicar/msg/camera_image_frame.hpp"
 #include "utils/logging.h"
 
 #include <libyuv/convert_argb.h>
 #include <libyuv/convert_from_argb.h>
-#include <optional>
 #include <rclcpp/qos.hpp>
 #include <sensor_msgs/image_encodings.hpp>
 #include <string>
-#include <utility>
 
 namespace rpicar::nodes {
 
@@ -60,26 +57,20 @@ RpiCameraNode::RpiCameraNode(const rclcpp::NodeOptions& options)
 
     publisher_ = create_publisher<msg::CameraImageFrame>(
             "/camera_image", rclcpp::QoS{CameraNodeConfig::QOS_HISTORY_LENGHT}.best_effort());
-    raw_image_publisher_ = create_publisher<sensor_msgs::msg::Image>(
-            "/image", rclcpp::QoS{CameraNodeConfig::QOS_HISTORY_LENGHT}.best_effort());
 
     camera_.set_frame_handler([&](const camera::CameraFrame& frame) {
         frame_count_++;
-
-        LOG_DEBUG(LOGGER_NAME, "Received a new frame from RPI camera. Buffer size: {}", frame.buffer.size());
-
         msg::CameraImageFrame msg{};
         fill_image_msg(frame.buffer, msg.frame);
         msg.frame_number = frame_count_;
 
         publisher_->publish(msg);
-        LOG_INFO(LOGGER_NAME, "Publish image");
-
-        sensor_msgs::msg::Image image_msg{};
-        fill_image_msg(frame.buffer, image_msg);
-
-        raw_image_publisher_->publish(image_msg);
-        LOG_INFO(LOGGER_NAME, "Publish raw image");
+        LOG_DEBUG(LOGGER_NAME,
+                  "Publish image. Frame number: {}, buffer size: {}, timestamp: {}.{:03}",
+                  msg.frame_number,
+                  msg.frame.data.size(),
+                  msg.frame.header.stamp.sec,
+                  msg.frame.header.stamp.nanosec / 1'000'000);
     });
 
     if (!camera_.start_capture()) {

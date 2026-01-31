@@ -16,14 +16,12 @@
 #pragma once
 
 #include "camera/v4l2_camera.h"
-#include "camera/transcoder.h"
 #include "rpicar/msg/camera_image_frame.hpp"
 
 #include <cstddef>
 #include <optional>
 #include <rclcpp/node.hpp>
 #include <rclcpp/node_options.hpp>
-#include <image_transport/image_transport/image_transport.hpp>
 #include <sensor_msgs/msg/image.hpp>
 
 namespace rpicar::nodes {

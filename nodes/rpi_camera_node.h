@@ -22,7 +22,6 @@
 #include <optional>
 #include <rclcpp/node.hpp>
 #include <rclcpp/node_options.hpp>
-#include <image_transport/image_transport/image_transport.hpp>
 #include <sensor_msgs/msg/image.hpp>
 
 namespace rpicar::nodes {
@@ -44,7 +43,6 @@ private:
 
     camera::RpiCamera camera_;
     rclcpp::Publisher<msg::CameraImageFrame>::SharedPtr publisher_{};
-    rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr raw_image_publisher_{};
     size_t frame_count_{0U};
 };
 

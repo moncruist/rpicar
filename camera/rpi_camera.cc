@@ -41,9 +41,9 @@ namespace {
 constexpr libcamera::PixelFormat to_pixel_format(ImageEncoding encoding) {
     switch (encoding) {
         case ImageEncoding::RGB24:
-            return libcamera::formats::RGB888;
+            return libcamera::formats::BGR888; // Raspberry Pi camera fucked up formats
         case ImageEncoding::BGR24:
-            return libcamera::formats::BGR888;
+            return libcamera::formats::RGB888;
         case ImageEncoding::YUV420:
             return libcamera::formats::YUV420;
         case ImageEncoding::YUV422:
@@ -375,7 +375,6 @@ bool RpiCamera::make_requests(const std::uint16_t fps) {
 }
 
 void RpiCamera::requested_completed_handler(libcamera::Request* request) {
-    LOG_INFO(CAMERA_LOGGER, "Request received");
     if (request->status() == Request::RequestCancelled) {
         LOG_INFO(CAMERA_LOGGER, "Request cancelled");
         return;

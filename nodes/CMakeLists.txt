@@ -9,7 +9,6 @@ target_link_libraries(camera_node PUBLIC
     camera
     utils
     rclcpp::rclcpp
-    image_transport::image_transport
     ${std_msgs_TARGETS}
     ${sensor_msgs_TARGETS}
     ${rpicar_cpp_typesupport_target}
