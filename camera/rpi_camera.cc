@@ -338,7 +338,7 @@ bool RpiCamera::make_requests(const std::uint16_t fps) {
     auto free_buffers(frame_buffers_);
     while (true) {
         for (const StreamConfiguration& config : *configuration_) {
-            Stream* stream = config.stream();
+            Stream* stream = config.stream(); // NOLINT(misc-const-correctness): allocator requires a non-const pointer
             if (stream == configuration_->at(0).stream()) {
                 if (free_buffers[stream].empty()) {
                     LOG_DEBUG(CAMERA_LOGGER, "Requests created: {}", requests_.size());
@@ -382,7 +382,7 @@ void RpiCamera::requested_completed_handler(libcamera::Request* request) {
 
     uint64_t timestamp{};
     if (request->metadata().contains(libcamera::controls::SensorTimestamp.id())) {
-        timestamp = request->metadata().get(libcamera::controls::SensorTimestamp).value();
+        timestamp = request->metadata().get(libcamera::controls::SensorTimestamp).value_or(0);
     } else {
         timestamp = request->buffers().begin()->second->metadata().timestamp;
     }
