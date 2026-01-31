@@ -4,6 +4,7 @@ project(rpicar)
 option(CLANG_TIDY_CHECK "Run clang-tidy checks" OFF)
 option(DEBUG_ASSERTIONS "Enable debug assertions" OFF)
 option(PROFILER "Enable profiler support" OFF)
+option(RPI_BUILD "Build for Raspberry Pi" OFF)
 message(STATUS "Clang-tidy checks enabled: ${CLANG_TIDY_CHECK}")
 
 set(CMAKE_CXX_STANDARD 23)
@@ -14,6 +15,11 @@ endif()
 
 if(DEBUG_ASSERTIONS OR CMAKE_BUILD_TYPE STREQUAL "Debug")
   add_compile_definitions(DEBUG_ASSERTIONS)
+endif()
+
+if(RPI_BUILD)
+  add_compile_options(-march=armv8.2-a+simd -mtune=cortex-a76 -mcpu=cortex-a76 -ftree-vectorize)
+  add_compile_definitions(RPI_BUILD)
 endif()
 
 if (PROFILER)
