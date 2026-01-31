@@ -13,7 +13,8 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-#pragma once
+#ifndef CAMERA_CAMERA_H
+#define CAMERA_CAMERA_H
 
 #include <cstdint>
 #include <functional>
@@ -73,3 +74,5 @@ public:
 };
 
 } // namespace rpicar::camera
+
+#endif // CAMERA_CAMERA_H
