@@ -22,6 +22,7 @@
 #include "rpicar/msg/camera_image_frame.hpp"
 #include "utils/logging.h"
 
+#include <chrono>
 #include <cstddef>
 #include <libyuv/convert_argb.h>
 #include <libyuv/convert_from_argb.h>
@@ -60,11 +61,12 @@ calculate_frame_size(const std::size_t channels, const std::size_t width, const 
 
 } // namespace
 
-CameraNode::CameraNode(const rclcpp::NodeOptions& options) : rclcpp::Node("camera", options) {
-    camera_ = camera::V4L2Camera::create_camera(CameraNodeConfig::CAPTURE_WIDTH,
-                                                CameraNodeConfig::CAPTURE_HEIGHT,
-                                                CameraNodeConfig::CAPTURE_ENCODING,
-                                                CameraNodeConfig::FPS);
+CameraNode::CameraNode(const rclcpp::NodeOptions& options)
+  : rclcpp::Node("camera", options),
+    camera_{camera::V4L2Camera::create_camera(CameraNodeConfig::CAPTURE_WIDTH,
+                                              CameraNodeConfig::CAPTURE_HEIGHT,
+                                              CameraNodeConfig::CAPTURE_ENCODING,
+                                              CameraNodeConfig::FPS)} {
 
     if (!camera_.has_value()) {
         LOG_ERROR("camera_node", "Failed to initialize camera");
@@ -81,6 +83,10 @@ CameraNode::CameraNode(const rclcpp::NodeOptions& options) : rclcpp::Node("camer
     camera.set_frame_handler([&](const camera::CameraFrame& frame) {
         frame_count_++;
 
+        LOG_INFO("camera_node",
+                 "Received frame {} with timestamp: {}",
+                 frame_count_,
+                 frame.timestamp.time_since_epoch().count());
         std::vector<uint8_t> argb_buf{};
         argb_buf.resize(calculate_frame_size(4U, CameraNodeConfig::CAPTURE_WIDTH, CameraNodeConfig::CAPTURE_HEIGHT));
         int ret = libyuv::YUY2ToARGB(frame.buffer.data(),

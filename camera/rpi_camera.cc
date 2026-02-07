@@ -20,6 +20,7 @@
 #include "utils/assert.h"
 #include "utils/logging.h"
 
+#include <chrono>
 #include <initializer_list>
 #include <libcamera/control_ids.h>
 #include <libcamera/formats.h>
@@ -380,11 +381,15 @@ void RpiCamera::requested_completed_handler(libcamera::Request* request) {
         return;
     }
 
-    uint64_t timestamp{};
+
+    std::chrono::time_point<std::chrono::steady_clock> timestamp{};
     if (request->metadata().contains(libcamera::controls::SensorTimestamp.id())) {
-        timestamp = request->metadata().get(libcamera::controls::SensorTimestamp).value_or(0);
+        std::int64_t sensor_timestamp{request->metadata().get(libcamera::controls::SensorTimestamp).value_or(0)};
+        timestamp = std::chrono::time_point<std::chrono::steady_clock>{std::chrono::nanoseconds{sensor_timestamp}};
     } else {
-        timestamp = request->buffers().begin()->second->metadata().timestamp;
+        LOG_WARN(CAMERA_LOGGER, "Use metadata timestamp");
+        std::uint64_t metadata_timestamp{request->buffers().begin()->second->metadata().timestamp};
+        timestamp = std::chrono::time_point<std::chrono::steady_clock>{std::chrono::nanoseconds{metadata_timestamp}};
     }
 
     const std::size_t buffer_size{request->buffers().begin()->second->planes().begin()->length};
@@ -393,11 +398,12 @@ void RpiCamera::requested_completed_handler(libcamera::Request* request) {
              "Status: {}\tBuf size: {}\tTimestamp: {}",
              static_cast<int>(request->status()),
              buffer_size,
-             timestamp);
+             timestamp.time_since_epoch().count());
 
     if (frame_handler_) {
         const auto& buffers{mapped_buffers_.at(request->buffers().begin()->second)};
-        const CameraFrame frame{.format = current_format(), .buffer = {buffers.at(0).data(), buffer_size}};
+        const CameraFrame frame{
+                .format = current_format(), .timestamp = timestamp, .buffer = {buffers.at(0).data(), buffer_size}};
         frame_handler_(frame);
     }
 

@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <array>
 #include <cerrno>
+#include <chrono>
 #include <cstdint>
 #include <cstring>
 #include <fcntl.h>
@@ -67,6 +68,11 @@ const std::array<EncodingMappingEntry, 5> kImageEncodingMappingTable{
          {.internal = ImageEncoding::YUV420, .v4l2 = V4L2_PIX_FMT_YUV420},
          {.internal = ImageEncoding::YUV422, .v4l2 = V4L2_PIX_FMT_YUYV},
          {.internal = ImageEncoding::MJPEG, .v4l2 = V4L2_PIX_FMT_MJPEG}}};
+
+constexpr std::chrono::time_point<std::chrono::steady_clock> from_timeval(const timeval& tv) {
+    return std::chrono::time_point<std::chrono::steady_clock>{std::chrono::seconds{tv.tv_sec} +
+                                                              std::chrono::microseconds{tv.tv_usec}};
+}
 
 } // namespace
 
@@ -491,6 +497,7 @@ bool V4L2Camera::start_capture() {
         return false;
     }
 
+    LOG_INFO(CAMERA_LOGGER, "Capture started");
     start_capture_thread();
     running_ = true;
 
@@ -647,6 +654,7 @@ void V4L2Camera::read_frame(const v4l2_buffer& buffer) {
 
     if (frame_handler_) {
         const CameraFrame frame{.format = current_format(),
+                                .timestamp = from_timeval(buffer.timestamp),
                                 .buffer = {reinterpret_cast<uint8_t*>(buffers_[buffer.index].addr), buffer.bytesused}};
         frame_handler_(frame);
     }

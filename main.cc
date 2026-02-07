@@ -27,13 +27,12 @@
 
 int main(int argc, char* argv[]) {
     rclcpp::init(argc, argv);
-    rclcpp::executors::MultiThreadedExecutor executor;
 #ifdef RPI_BUILD
-    executor.add_node(std::make_shared<rpicar::nodes::RpiCameraNode>(rclcpp::NodeOptions{}));
+    auto camera_node = std::make_shared<rpicar::nodes::RpiCameraNode>(rclcpp::NodeOptions{});
 #else
-    executor.add_node(std::make_shared<rpicar::nodes::CameraNode>(rclcpp::NodeOptions{}));
+    auto camera_node = std::make_shared<rpicar::nodes::CameraNode>(rclcpp::NodeOptions{});
 #endif
-    executor.spin();
+    rclcpp::spin(camera_node);
     rclcpp::shutdown();
     return 0;
 }

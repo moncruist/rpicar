@@ -16,6 +16,7 @@
 #ifndef CAMERA_CAMERA_H
 #define CAMERA_CAMERA_H
 
+#include <chrono>
 #include <cstdint>
 #include <functional>
 #include <span>
@@ -53,8 +54,9 @@ struct ImageFormat {
 };
 
 struct CameraFrame {
-    ImageFormat format;
-    std::span<uint8_t> buffer;
+    ImageFormat format{};
+    std::chrono::time_point<std::chrono::steady_clock> timestamp{};
+    std::span<uint8_t> buffer{};
 };
 
 // NOLINTNEXTLINE(hicpp-special-member-functions)
